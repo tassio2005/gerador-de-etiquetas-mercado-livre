@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ETIQUETAS MERCADO LIVRE</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    @page {
+      size: 150mm 100mm;
+      margin: 0;
+      padding: 0;
+    }
+    
+    :root { --bg:#111210;--panel:#1c1d1a;--border:#2d2e2a;--accent:#d4f53c;--text:#e8e6e0;--muted:#7a7870; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    
+    body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:24px}
+    
+    .container{max-width:1000px;margin:0 auto}
+    
+    h1{font-size:22px;margin-bottom:24px;color:var(--accent);font-family:'Space Mono',monospace}
+    
+    .upload-area{background:var(--panel);border:2px dashed var(--border);padding:40px;text-align:center;cursor:pointer;border-radius:4px;transition:all .2s}
+    .upload-area:hover{border-color:var(--accent);background:rgba(212,245,60,.03)}
+    .upload-area input{display:none}
+    .upload-area p{font-size:14px;margin-bottom:6px}
+    .upload-area span{font-size:12px;color:var(--muted);font-family:'Space Mono',monospace}
+    
+    .controls{display:none;gap:12px;margin-bottom:24px;align-items:center;flex-wrap:wrap}
+    .controls input{padding:9px 14px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:3px;font-size:12px;font-family:'Space Mono',monospace}
+    .controls input:focus{border-color:var(--accent);outline:none}
+    
+    .btn{padding:9px 16px;background:var(--accent);color:#111;border:none;border-radius:3px;cursor:pointer;font-weight:700;font-size:12px;font-family:'Space Mono',monospace;transition:opacity .15s}
+    .btn:hover{opacity:.88}
+    .btn.secondary{background:var(--muted);color:#111}
+    .btn.print{background:#ff5c35;color:#fff}
+    
+    .info{background:var(--panel);border:1px solid var(--border);padding:12px 16px;border-radius:3px;margin-bottom:24px;font-size:12px;display:none}
+    .info span{color:var(--accent);font-weight:700;font-family:'Space Mono',monospace}
+    
+    @media print{
+      body{
+        padding:0;
+        margin:0;
+        background:#fff;
+      }
+      .container{
+        max-width:100%;
+        margin:0;
+        padding:0;
+      }
+      .upload-area,.controls,.info,h1{
+        display:none !important;
+      }
+      .grid{
+        gap:0;
+        margin:0;
+        padding:0;
+        grid-template-columns:1fr !important;
+      }
+      .etiqueta{
+        box-shadow:none;
+        border:none;
+      }
+      .btn-remove{display:none !important}
+    }
+    
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
+    
+    /* ETIQUETA MERCADO LIVRE - MINIMALISTA */
+    .etiqueta{
+      width:150mm;
+      height:100mm;
+      background:#fff;
+      color:#000;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:space-evenly;
+      border:1px solid #ccc;
+      position:relative;
+      overflow:hidden;
+      page-break-inside:avoid;
+      page-break-after:always;
+      box-shadow:0 2px 8px rgba(0,0,0,.1);
+      margin:0;
+      padding:0;
+    }
+    
+    .nf-txt{
+      display:inline-block;
+      transform-origin:center center;
+      white-space:nowrap;
+    }
+
+    .etiqueta-nf{
+      position:relative;
+      font-size:108px;
+      font-weight:900;
+      line-height:1;
+      letter-spacing:4px;
+      white-space:nowrap;
+      font-family:Arial,sans-serif;
+      text-align:center;
+    }
+    
+    .status-badge{
+      position:absolute;
+      bottom:12mm;
+      right:12mm;
+      width:16mm;
+      height:16mm;
+      border:2px solid #000;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:14px;
+      font-weight:700;
+      background:#fff;
+    }
+    
+    .etiqueta-wrapper{
+      position:relative;
+    }
+    
+    .btn-remove{
+      position:absolute;
+      top:6px;
+      right:6px;
+      width:24px;
+      height:24px;
+      padding:0;
+      background:rgba(255,92,53,.9);
+      color:#fff;
+      border:none;
+      border-radius:3px;
+      cursor:pointer;
+      font-size:11px;
+      font-weight:700;
+      display:none;
+      z-index:10;
+      transition:opacity .15s;
+    }
+    
+    .etiqueta-nf:hover .btn-remove{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    
+    .btn-remove:hover{
+      opacity:.8;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📦 Etiquetas Mercado Livre</h1>
+  
+  <div class="upload-area" onclick="document.getElementById('pdf').click()">
+    <input type="file" id="pdf" accept=".pdf">
+    <p>Arraste o PDF ou clique aqui</p>
+    <span>Será extraído automaticamente o número da NF</span>
+  </div>
+  
+  <div class="info" id="info">
+    Etiquetas geradas: <span id="count">0</span>
+  </div>
+  
+  <div class="controls" id="controls">
+    <input type="text" id="filterNF" placeholder="Filtrar por NF (ex: 6645)">
+    <button class="btn" onclick="filtrar()">🔍 Filtrar</button>
+    <button class="btn secondary" onclick="resetarFiltro()">✕ Limpar</button>
+    <button class="btn print" onclick="window.print()">🖨 Imprimir</button>
+  </div>
+
+  <div class="controls" id="addControls" style="display: flex;">
+    <input type="text" id="novoNF" placeholder="Número da NF" maxlength="10">
+    <button class="btn" onclick="adicionarEtiqueta()">➕ Adicionar Etiqueta</button>
+  </div>
+  
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  
+  let todasEtiquetas = [];
+  
+  document.getElementById('pdf').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+    
+    todasEtiquetas = [];
+    
+    for (let i = 0; i < pdf.numPages; i++) {
+      const page = await pdf.getPage(i + 1);
+      const text = await page.getTextContent();
+      const pageText = text.items.map(item => item.str).join(' ');
+      
+      // Buscar "NF: ####" no texto
+      const match = pageText.match(/NF:\s*(\d+)/);
+      if (match) {
+        todasEtiquetas.push({
+          nf: match[1],
+          id: Math.random()
+        });
+      }
+    }
+    
+    renderizar(todasEtiquetas);
+    
+    document.getElementById('controls').style.display = 'flex';
+    document.getElementById('info').style.display = 'block';
+    document.getElementById('count').textContent = todasEtiquetas.length;
+  });
+  
+  function renderizar(etiquetas) {
+    const grid = document.getElementById('grid');
+    // Agrupa de 3 em 3: cada etiqueta física recebe 3 NFs diferentes
+    const grupos = [];
+    for (let i = 0; i < etiquetas.length; i += 3) {
+      grupos.push(etiquetas.slice(i, i + 3));
+    }
+    grid.innerHTML = grupos.map(grupo => `
+      <div class="etiqueta-wrapper">
+        <div class="etiqueta">
+          ${grupo.map(et => `
+            <div class="etiqueta-nf"><span class="nf-txt">NF-${et.nf}</span><button class="btn-remove" onclick="removerEtiqueta('${et.id}')">✕</button></div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+    ajustarLargura();
+  }
+
+  // Estica cada NF horizontalmente para ocupar a largura da etiqueta
+  function ajustarLargura() {
+    document.querySelectorAll('.etiqueta').forEach(et => {
+      const alvo = et.clientWidth * 0.95;
+      et.querySelectorAll('.nf-txt').forEach(el => {
+        el.style.transform = 'none';
+        const w = el.offsetWidth;
+        if (w > 0) el.style.transform = 'scaleX(' + (alvo / w) + ')';
+      });
+    });
+  }
+
+  function filtrar() {
+    const nf = document.getElementById('filterNF').value.trim();
+    if (!nf) {
+      renderizar(todasEtiquetas);
+      return;
+    }
+    
+    const filtradas = todasEtiquetas.filter(et => et.nf.includes(nf));
+    renderizar(filtradas);
+  }
+  
+  function resetarFiltro() {
+    document.getElementById('filterNF').value = '';
+    renderizar(todasEtiquetas);
+  }
+  
+  function adicionarEtiqueta() {
+    const nf = document.getElementById('novoNF').value.trim();
+    if (!nf) {
+      alert('Digite um número de NF');
+      return;
+    }
+    
+    todasEtiquetas.push({
+      nf: nf,
+      id: Math.random()
+    });
+    
+    document.getElementById('novoNF').value = '';
+    document.getElementById('count').textContent = todasEtiquetas.length;
+    renderizar(todasEtiquetas);
+    document.getElementById('novoNF').focus();
+  }
+  
+  function removerEtiqueta(id) {
+    todasEtiquetas = todasEtiquetas.filter(et => et.id !== parseFloat(id));
+    document.getElementById('count').textContent = todasEtiquetas.length;
+    renderizar(todasEtiquetas);
+  }
+  
+  document.getElementById('novoNF').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      adicionarEtiqueta();
+    }
+  });
+</script>
+
+</body>
+</html>
